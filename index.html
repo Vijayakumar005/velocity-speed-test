@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Velocity</title>
+  <meta name="theme-color" content="#0A0E1A">
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#0A0E1A;--card:rgba(255,255,255,.08);--text:#e8ecf5;--muted:#9ba8c4;--primary:#C8FF3D;--secondary:#4DE1FF;--danger:#ff6c8f;--accent:#7d6fff;--radius:24px}
+    [data-theme='light']{--bg:#f6f5ef;--card:rgba(255,255,255,.8);--text:#1f2440;--muted:#5c6387;--primary:#5165ff;--secondary:#00a0d1;--danger:#c84a6b;--accent:#6a4dff}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,sans-serif;background:radial-gradient(circle at 20% 0%,rgba(77,225,255,.16),transparent 40%),var(--bg);color:var(--text)}
+    .app{max-width:1080px;margin:0 auto;padding:16px}
+    .glass{background:var(--card);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.15);border-radius:var(--radius)}
+    header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+    h1{font-family:'Space Grotesk',sans-serif;margin:0;font-size:2rem;letter-spacing:.04em}
+    .controls{display:flex;gap:10px;flex-wrap:wrap}
+    button,select{min-height:48px;border-radius:14px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.2);color:var(--text);padding:0 14px;font:inherit;cursor:pointer}
+    [data-theme='light'] button,[data-theme='light'] select{background:#fff}
+    main{display:grid;gap:14px;margin-top:14px}
+    .hero{padding:16px;display:grid;gap:8px;justify-items:center;text-align:center;position:relative;overflow:hidden}
+    .phase{font-weight:700;color:var(--secondary)}
+    .speed{font:700 2.5rem 'Space Grotesk',sans-serif}
+    .unit{font-size:1rem;color:var(--muted)}
+    svg{max-width:420px;width:100%}
+    #needle{transform-origin:200px 180px;transition:transform .35s cubic-bezier(.2,1,.2,1)}
+    #graph{width:100%;height:140px;border-radius:16px;background:rgba(0,0,0,.18)}
+    .cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .card{padding:14px}
+    .label{font-size:.85rem;color:var(--muted)}
+    .value{font:700 1.5rem 'Space Grotesk',sans-serif}
+    .qual{font-weight:700}
+    .grid2{display:grid;gap:12px;grid-template-columns:1fr}
+    .panel{padding:14px}
+    .row{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    .small{font-size:.9rem;color:var(--muted)}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    .history-item{display:grid;grid-template-columns:1fr auto;gap:8px;padding:8px 0;border-top:1px solid rgba(255,255,255,.1)}
+    .mini{height:8px;background:rgba(255,255,255,.15);border-radius:999px;overflow:hidden}
+    .mini>span{display:block;height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary))}
+    .volt-wrap{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center}
+    .bubble{padding:10px 12px;border-radius:14px;background:rgba(0,0,0,.3)}
+    [data-volt='idle'] .volt{animation:float 2.4s ease-in-out infinite}
+    [data-volt='testing'] .volt{animation:bounce .6s ease-in-out infinite}
+    [data-volt='success'] .volt{animation:jump .7s ease-in-out 3}
+    [data-volt='error'] .volt{animation:sway 1.2s ease-in-out infinite}
+    @keyframes float{50%{transform:translateY(-4px)}}
+    @keyframes bounce{50%{transform:translateY(-6px)}}
+    @keyframes jump{50%{transform:translateY(-12px)}}
+    @keyframes sway{25%{transform:rotate(-5deg)}75%{transform:rotate(5deg)}}
+    .confetti{position:absolute;top:10px;left:50%;translate:-50% 0;opacity:0;pointer-events:none}
+    .confetti.show{opacity:1;animation:pop .8s ease-out}
+    @keyframes pop{0%{transform:translate(-50%,0) scale(.3)}100%{transform:translate(-50%,-28px) scale(1.1);opacity:0}}
+    @media (min-width:900px){.grid2{grid-template-columns:1fr 1fr}}
+    @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Velocity</h1>
+    <div class="controls">
+      <select id="theme"><option value="auto">Auto</option><option value="dark">Dark</option><option value="light">Light</option></select>
+      <button id="langBtn" aria-label="language">EN ⇄ TA</button>
+    </div>
+  </header>
+  <main>
+    <section class="hero glass" data-volt="idle" id="hero">
+      <div class="confetti" id="confetti">✨🎉⚡</div>
+      <div class="volt-wrap">
+        <svg class="volt" width="86" height="86" viewBox="0 0 120 120" role="img" aria-label="Volt mascot">
+          <circle cx="60" cy="62" r="34" fill="url(#g)"/>
+          <defs><linearGradient id="g"><stop offset="0" stop-color="#4DE1FF"/><stop offset="1" stop-color="#C8FF3D"/></linearGradient></defs>
+          <line x1="60" y1="20" x2="60" y2="30" stroke="currentColor" stroke-width="4"/>
+          <circle id="ant" cx="60" cy="16" r="6" fill="#C8FF3D"/>
+          <circle id="eyeL" cx="48" cy="60" r="5" fill="#0A0E1A"/><circle id="eyeR" cx="72" cy="60" r="5" fill="#0A0E1A"/>
+          <rect x="45" y="74" width="30" height="6" rx="3" fill="#0A0E1A"/>
+        </svg>
+        <div class="bubble" id="voltBubble"></div>
+      </div>
+      <svg viewBox="0 0 400 220" aria-hidden="true">
+        <path d="M40 180 A160 160 0 0 1 360 180" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="24"/>
+        <path d="M40 180 A160 160 0 0 1 360 180" fill="none" stroke="url(#arc)" stroke-width="24"/>
+        <defs><linearGradient id="arc"><stop offset="0" stop-color="#4DE1FF"/><stop offset="1" stop-color="#C8FF3D"/></linearGradient></defs>
+        <line id="needle" x1="200" y1="180" x2="200" y2="40" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
+      </svg>
+      <div class="phase" id="phaseText"></div>
+      <div class="speed"><span id="speedNum">0.00</span> <span class="unit">Mbps</span></div>
+      <div class="actions">
+        <select id="mode"><option value="quick"></option><option value="standard"></option></select>
+        <button id="startBtn"></button>
+        <button id="cancelBtn" disabled></button>
+      </div>
+      <canvas id="graph" width="1000" height="220" aria-label="Live throughput graph"></canvas>
+      <div id="ariaLive" aria-live="polite" class="small"></div>
+    </section>
+
+    <section class="cards">
+      <article class="card glass"><div class="label" id="dlLabel"></div><div class="value" id="dlVal">--</div><div class="qual" id="dlQual"></div></article>
+      <article class="card glass"><div class="label" id="ulLabel"></div><div class="value" id="ulVal">--</div><div class="qual" id="ulQual"></div></article>
+      <article class="card glass"><div class="label" id="pingLabel"></div><div class="value" id="pingVal">--</div><div class="qual" id="pingQual"></div></article>
+      <article class="card glass"><div class="label" id="jitLabel"></div><div class="value" id="jitVal">--</div><div class="qual" id="jitQual"></div></article>
+    </section>
+
+    <section class="grid2">
+      <article class="panel glass"><h3 id="whatTitle"></h3><div id="whatBody" class="small"></div></article>
+      <article class="panel glass"><h3 id="connTitle"></h3><div id="connBody" class="small"></div></article>
+    </section>
+
+    <section class="grid2">
+      <article class="panel glass"><h3 id="histTitle"></h3><div class="actions"><button id="clearHistory"></button></div><div id="historyList"></div></article>
+      <article class="panel glass"><h3 id="shareTitle"></h3><div class="actions"><button id="copyBtn"></button><button id="pngBtn"></button></div><div id="shareMsg" class="small"></div></article>
+    </section>
+  </main>
+</div>
+<script>
+const STRINGS={en:{auto:'Auto',dark:'Dark',light:'Light',quick:'Quick (~15s)',standard:'Standard (~40s)',start:'Start test',cancel:'Cancel',phaseIdle:'Ready',phaseLatency:'Testing ping & jitter',phaseDownload:'Testing download',phaseUpload:'Testing upload',phaseDone:'Complete',phaseError:'Could not measure',blocked:'Looks blocked. Please check ad-blocker, Brave Shields, firewall, VPN, or offline status, then try again.',tryAgain:'Try again',download:'Download',upload:'Upload',ping:'Ping',jitter:'Jitter',excellent:'Excellent',good:'Good',slow:'Slow',whatTitle:'What can I do with this?',connTitle:'Connection details',history:'History',clearHistory:'Clear history',share:'Share',copy:'Copy result',png:'Download PNG',route:'Route',global:'Global edge',fallback:'Site host fallback',honest:'Browsers cannot read your SIM operator or phone number — the ISP shown is derived from your IP address.',testingVolt:'Measuring… hold on! ⚡',successVolt:'Wow, super fast! 🚀',errorVolt:'Hmm, blocked! Check your ad-blocker 🛡️',idleVolt:'Ready when you are ✨',copied:'Result copied',saved:'PNG saved',offline:'You are offline. Reconnect and try again.',cancelled:'Cancelled',online:'Back online'},ta:{auto:'தானாக',dark:'இருள்',light:'ஒளி',quick:'விரைவு (~15s)',standard:'சாதாரண (~40s)',start:'சோதனை தொடங்கு',cancel:'ரத்து',phaseIdle:'தயார்',phaseLatency:'பிங் & ஜிட்டர் அளக்கிறது',phaseDownload:'பதிவிறக்க வேகம் அளக்கிறது',phaseUpload:'பதிவேற்ற வேகம் அளக்கிறது',phaseDone:'முடிந்தது',phaseError:'அளவிட முடியவில்லை',blocked:'தடை ஏற்பட்டது. Ad-blocker, Brave Shields, firewall, VPN அல்லது offline நிலையைச் சரிபார்த்து மீண்டும் முயற்சி செய்யவும்.',tryAgain:'மீண்டும் முயற்சி',download:'பதிவிறக்கம்',upload:'பதிவேற்றம்',ping:'பிங்',jitter:'ஜிட்டர்',excellent:'சிறப்பு',good:'நன்று',slow:'மெதுவாக',whatTitle:'இதனால் என்ன செய்யலாம்?',connTitle:'இணைப்பு விவரங்கள்',history:'வரலாறு',clearHistory:'வரலாறு அழி',share:'பகிர்வு',copy:'முடிவை நகலெடு',png:'PNG பதிவிறக்கு',route:'பாதை',global:'உலக Edge',fallback:'தள fallback',honest:'உங்கள் SIM operator அல்லது phone number-ஐ browser படிக்க முடியாது — ISP தகவல் IP முகவரியிலிருந்து பெறப்படுகிறது.',testingVolt:'Alanthu paakuren… konjam poru! ⚡',successVolt:'Sema speed! 🚀',errorVolt:'Block aayiruchu, ad-blocker check pannu 🛡️',idleVolt:'Ready a iruken ✨',copied:'முடிவு நகலெடுக்கப்பட்டது',saved:'PNG சேமிக்கப்பட்டது',offline:'நீங்கள் offline. இணையம் வந்தபின் மீண்டும் முயற்சிக்கவும்.',cancelled:'ரத்து செய்யப்பட்டது',online:'இணையம் திரும்ப இணைந்தது'}};
+
+const el=id=>document.getElementById(id);const state={lang:'en',results:null,route:'global',running:false,series:[],controllers:[],samples:[]};
+const q=(n)=>Math.max(0,Math.min(180,180-(Math.log10(Math.max(0.1,n))/3)*180));
+const modeCfg=()=>el('mode').value==='quick'?{dlTotal:2*1024*1024,ulTotal:786432,dlConn:4,duration:15}:{dlTotal:10*1024*1024,ulTotal:3145728,dlConn:6,duration:40};
+function t(k){return STRINGS[state.lang][k]||k}
+function setText(){document.documentElement.lang=state.lang;el('theme').options[0].text=t('auto');el('theme').options[1].text=t('dark');el('theme').options[2].text=t('light');el('mode').options[0].text=t('quick');el('mode').options[1].text=t('standard');el('startBtn').textContent=t('start');el('cancelBtn').textContent=t('cancel');el('phaseText').textContent=t('phaseIdle');el('dlLabel').textContent=t('download');el('ulLabel').textContent=t('upload');el('pingLabel').textContent=t('ping');el('jitLabel').textContent=t('jitter');el('whatTitle').textContent=t('whatTitle');el('connTitle').textContent=t('connTitle');el('histTitle').textContent=t('history');el('shareTitle').textContent=t('share');el('clearHistory').textContent=t('clearHistory');el('copyBtn').textContent=t('copy');el('pngBtn').textContent=t('png');if(!state.running)setVolt('idle')}
+function setTheme(v){localStorage.setItem('velocity-theme',v);const dark=window.matchMedia('(prefers-color-scheme: dark)').matches;document.body.dataset.theme=v==='auto'?(dark?'dark':'light'):v}
+function announce(msg){el('ariaLive').textContent=msg}
+function setPhase(k){el('phaseText').textContent=t(k);announce(t(k))}
+function setSpeed(v){el('speedNum').textContent=v.toFixed(2);el('needle').style.transform=`rotate(${q(v)-90}deg)`;if(v>100){el('confetti').classList.remove('show');void el('confetti').offsetWidth;el('confetti').classList.add('show')}}
+function qualSpeed(v){return v>=100?t('excellent'):v>=25?t('good'):t('slow')}function qualPing(v){return v<=25?t('excellent'):v<=60?t('good'):t('slow')}
+function updateCards(r){el('dlVal').textContent=`${r.download.toFixed(2)} Mbps`;el('ulVal').textContent=`${r.upload.toFixed(2)} Mbps`;el('pingVal').textContent=`${Math.round(r.ping)} ms`;el('jitVal').textContent=`${Math.round(r.jitter)} ms`;el('dlQual').textContent=qualSpeed(r.download);el('ulQual').textContent=qualSpeed(r.upload);el('pingQual').textContent=qualPing(r.ping);el('jitQual').textContent=qualPing(r.jitter)}
+function setVolt(mode){el('hero').dataset.volt=mode;el('voltBubble').textContent=t(mode==='testing'?'testingVolt':mode==='success'?'successVolt':mode==='error'?'errorVolt':'idleVolt')}
+function drawGraph(){const c=el('graph'),x=c.getContext('2d'),w=c.width,h=c.height; x.clearRect(0,0,w,h);x.fillStyle='rgba(77,225,255,.08)';x.fillRect(0,0,w,h);if(!state.series.length)return;x.beginPath();state.series.slice(-180).forEach((v,i)=>{const px=i*(w/180),py=h-Math.min(h-6,(Math.log10(Math.max(0.1,v))/3)*h);if(!i)x.moveTo(px,py);else x.lineTo(px,py)});x.strokeStyle='#4DE1FF';x.lineWidth=4;x.stroke();x.lineTo(w,h);x.lineTo(0,h);x.closePath();x.fillStyle='rgba(200,255,61,.22)';x.fill()}
+function pushHistory(r){const h=JSON.parse(localStorage.getItem('velocity-history')||'[]');h.unshift({ts:Date.now(),...r});localStorage.setItem('velocity-history',JSON.stringify(h.slice(0,12)));renderHistory()}
+function renderHistory(){const h=JSON.parse(localStorage.getItem('velocity-history')||'[]');el('historyList').innerHTML=h.map(i=>`<div class='history-item'><div><div>${new Date(i.ts).toLocaleString()}</div><div class='small'>↓${i.download.toFixed(1)} ↑${i.upload.toFixed(1)} • ${Math.round(i.ping)}ms</div></div><div class='mini'><span style='width:${Math.min(100,i.download/5)}%'></span></div></div>`).join('')||`<div class='small'>—</div>`}
+function updateMeaning(r){const mins=(5120/Math.max(0.1,r.download))/60;el('whatBody').innerHTML=`🎬 4K: ${r.download>=25?'Yes':'Maybe'}<br>🎥 HD calls: ${r.upload>=3&&r.ping<100?'Smooth':'May stutter'}<br>🎮 Gaming: ${r.ping<50?'Responsive':'Higher latency'}<br>📦 5 GB download: ~${mins.toFixed(1)} min`}
+async function connectionInfo(){const c=navigator.connection||{};let txt=`${c.effectiveType?`Type: ${c.effectiveType}<br>`:''}${c.downlink?`Est downlink: ${c.downlink} Mbps<br>`:''}${c.saveData!==undefined?`Data saver: ${c.saveData?'On':'Off'}<br>`:''}`;try{const d=await fetchTimeout('https://ipapi.co/json/');const j=await d.json();txt+=`${j.org||''}<br>${j.city||''} ${j.country_name||''}<br>`}catch{}txt+=`${t('route')}: ${state.route==='global'?t('global'):t('fallback')}<br>${t('honest')}`;el('connBody').innerHTML=txt}
+function fetchTimeout(url,opt={}){const c=new AbortController();const timer=setTimeout(()=>c.abort('timeout'),10000);if(opt.signal)opt.signal.addEventListener('abort',()=>c.abort('parent'));state.controllers.push(c);return fetch(url,{...opt,signal:c.signal}).finally(()=>clearTimeout(timer))}
+function median(a){const s=[...a].sort((x,y)=>x-y);const m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2}
+function mean(a){return a.reduce((p,c)=>p+c,0)/Math.max(1,a.length)}
+function cancelAll(){state.controllers.forEach(c=>c.abort('cancelled'));state.controllers=[];state.running=false;el('cancelBtn').disabled=true;el('startBtn').disabled=false;setVolt('idle')}
+function randomBlob(size){const bytes=new Uint8Array(size);for(let i=0;i<size;i+=65536){crypto.getRandomValues(bytes.subarray(i,Math.min(size,i+65536)))}return new Blob([bytes],{type:'application/octet-stream'})}
+
+async function latencyPhase(){setPhase('phaseLatency');setVolt('testing');const samples=[];state.route='global';for(let i=0;i<10;i++){const s=performance.now();try{await fetchTimeout(`https://speed.cloudflare.com/__down?bytes=0&x=${Date.now()}${i}`);samples.push(performance.now()-s)}catch{if(!i){try{await fetchTimeout(`https://speed.cloudflare.com/__down?bytes=0&x=${Date.now()}r`);samples.push(performance.now()-s);continue}catch{}}try{state.route='fallback';const s2=performance.now();await fetchTimeout(`assets/ping.txt?x=${Date.now()}${i}`);samples.push(performance.now()-s2)}catch{throw new Error('latency_failed')}}setSpeed(0);await new Promise(r=>setTimeout(r,70));}
+const jitter=mean(samples.slice(1).map((v,i)=>Math.abs(v-samples[i])));return{ping:median(samples),jitter}
+}
+
+async function downloadPhase(){setPhase('phaseDownload');const cfg=modeCfg();let start=performance.now(),bytes=0,last=start,lastBytes=0,peak=0;state.series=[];const ticker=setInterval(()=>{const now=performance.now();const mbps=((bytes-lastBytes)*8)/((now-last)/1000)/1e6;peak=Math.max(peak,mbps);if(now-start>((cfg.duration*1000)*.1)){state.series.push(mbps);setSpeed(Math.max(0.01,mean(state.series.slice(-6))))}last=now;lastBytes=bytes;drawGraph()},180);
+const run=async(useFallback=false)=>Promise.all(Array.from({length:cfg.dlConn},(_,i)=> (async()=>{const chunk=Math.ceil(cfg.dlTotal/cfg.dlConn);const url=useFallback?`assets/speed-payload.bin?x=${Date.now()}${i}`:`https://speed.cloudflare.com/__down?bytes=${chunk}&x=${Date.now()}${i}`;const res=await fetchTimeout(url);if(!res.ok)throw new Error('bad');const rd=res.body?.getReader();if(!rd){const b=await res.arrayBuffer();bytes+=b.byteLength;return}for(;;){const n=await rd.read();if(n.done)break;bytes+=n.value.byteLength}})()));
+try{state.route='global';await run(false)}catch{try{await run(false)}catch{state.route='fallback';await run(true)}}finally{clearInterval(ticker)}
+const sustained=mean(state.series.slice(Math.floor(state.series.length*.1)));return Math.max(0.01,sustained||peak||0)
+}
+
+async function uploadPhase(){setPhase('phaseUpload');const cfg=modeCfg();const total=cfg.ulTotal;const each=Math.ceil(total/3);let done=0;const started=performance.now();const timer=setInterval(()=>{const mbps=((done*8)/((performance.now()-started)/1000))/1e6;state.series.push(mbps);setSpeed(mbps);drawGraph()},180);
+try{await Promise.all(Array.from({length:3},async(_,i)=>{const blob=randomBlob(each);const s=performance.now();await fetchTimeout(`https://speed.cloudflare.com/__up?x=${Date.now()}${i}`,{method:'POST',body:blob});done+=blob.size;return(performance.now()-s)}));}catch{try{await Promise.all(Array.from({length:3},async(_,i)=>{const blob=randomBlob(each);await fetchTimeout(`https://speed.cloudflare.com/__up?x=${Date.now()}r${i}`,{method:'POST',body:blob});done+=blob.size;}));}catch{throw new Error('upload_failed')}}finally{clearInterval(timer)}
+return ((done*8)/((performance.now()-started)/1000))/1e6
+}
+
+function showFriendlyError(msg){setPhase('phaseError');setVolt('error');announce(msg);el('shareMsg').innerHTML=`${msg} <button id='tryAgainBtn'>${t('tryAgain')}</button>`;document.getElementById('tryAgainBtn').onclick=()=>el('startBtn').click()}
+
+async function run(){if(state.running)return;state.running=true;el('startBtn').disabled=true;el('cancelBtn').disabled=false;el('shareMsg').textContent='';try{if(!navigator.onLine)throw new Error('offline');const latency=await latencyPhase();const download=await downloadPhase();const upload=await uploadPhase();state.results={...latency,download,upload,route:state.route};updateCards(state.results);updateMeaning(state.results);pushHistory(state.results);connectionInfo();setPhase('phaseDone');setVolt('success');announce(`${t('phaseDone')}: ${download.toFixed(1)} Mbps`);}catch(e){if(e.message==='offline'){showFriendlyError(t('offline'))}else if(e.name==='AbortError'){announce(t('cancelled'))}else{showFriendlyError(t('blocked'))}}finally{state.running=false;el('cancelBtn').disabled=true;el('startBtn').disabled=false}}
+
+el('theme').addEventListener('change',e=>setTheme(e.target.value));
+el('langBtn').onclick=()=>{state.lang=state.lang==='en'?'ta':'en';localStorage.setItem('velocity-lang',state.lang);setText();renderHistory();if(state.results){updateCards(state.results);updateMeaning(state.results)}connectionInfo()};
+el('startBtn').onclick=run;el('cancelBtn').onclick=cancelAll;el('clearHistory').onclick=()=>{localStorage.removeItem('velocity-history');renderHistory()};
+el('copyBtn').onclick=async()=>{if(!state.results)return;const r=state.results;const text=`Velocity\n↓ ${r.download.toFixed(2)} Mbps\n↑ ${r.upload.toFixed(2)} Mbps\nPing ${Math.round(r.ping)}ms | Jitter ${Math.round(r.jitter)}ms\nRoute: ${r.route==='global'?t('global'):t('fallback')}`;await navigator.clipboard.writeText(text);el('shareMsg').textContent=t('copied')};
+el('pngBtn').onclick=()=>{if(!state.results)return;const c=document.createElement('canvas');c.width=900;c.height=470;const x=c.getContext('2d');x.fillStyle=getComputedStyle(document.body).getPropertyValue('--bg');x.fillRect(0,0,c.width,c.height);x.fillStyle='#fff';x.font='700 54px Space Grotesk';x.fillText('Velocity',40,80);x.font='600 38px Inter';x.fillText(`↓ ${state.results.download.toFixed(2)} Mbps`,40,180);x.fillText(`↑ ${state.results.upload.toFixed(2)} Mbps`,40,240);x.fillText(`Ping ${Math.round(state.results.ping)}ms`,40,300);x.fillText(`Jitter ${Math.round(state.results.jitter)}ms`,40,360);const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download='velocity-result.png';a.click();el('shareMsg').textContent=t('saved')};
+window.addEventListener('online',()=>announce(t('online')));window.addEventListener('offline',()=>showFriendlyError(t('offline')));
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+state.lang=localStorage.getItem('velocity-lang')||'en';el('theme').value=localStorage.getItem('velocity-theme')||'auto';setTheme(el('theme').value);setText();renderHistory();connectionInfo();
+if(new URLSearchParams(location.search).get('autostart')==='1'){el('mode').value='quick';run()}
+</script>
+</body>
+</html>
